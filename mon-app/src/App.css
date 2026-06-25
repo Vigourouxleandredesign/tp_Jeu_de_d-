@@ -17,6 +17,9 @@
 }
 
 .App-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   text-align: left;
 }
 
@@ -37,12 +40,26 @@
 }
 
 .App-subtitle {
-  margin: 0;
+  margin: 0 0 32px;
   max-width: 420px;
   font-size: 1.125rem;
   line-height: 1.55;
   color: #6e6e73;
   font-weight: 400;
+}
+
+.App-canvas-wrapper {
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1 / 1;
+}
+
+.App-canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent;
+  touch-action: none;
 }
 
 .App-content {
@@ -61,10 +78,20 @@
   }
 
   .App-intro {
+    align-items: center;
     text-align: center;
   }
 
   .App-subtitle {
+    margin: 0 auto 32px;
+  }
+
+  .App-canvas-wrapper {
     margin: 0 auto;
+    max-width: min(420px, 100%);
+  }
+
+  .App-content {
+    width: 100%;
   }
 }

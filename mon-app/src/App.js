@@ -1,8 +1,53 @@
 import logo from './logo.svg';
 import './App.css';
-import Dice from './components/dice';
+import Dice, { Dice3D, ROLL_DURATION_MS } from './components/dice';
+import { Suspense, useState, useEffect } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei/core/OrbitControls';
 
 function App() {
+  const [dice, setDice] = useState(0);
+  const [history, setHistory] = useState([]);
+  const [isRolling, setIsRolling] = useState(false);
+
+  const rollDice = () => {
+    if (isRolling) return;
+
+    const value = Math.floor(Math.random() * 6) + 1;
+    setDice(value);
+    setHistory([...history, value]);
+    setIsRolling(true);
+  };
+
+  // Au chargement de la page : restaurer l'historique
+  useEffect(() => {
+    const saved = localStorage.getItem('diceHistory');
+    if (saved) {
+      setHistory(JSON.parse(saved));
+    }
+  }, []);
+
+  // À chaque changement de history : sauvegarder
+  useEffect(() => {
+    if (history.length > 0) {
+      localStorage.setItem('diceHistory', JSON.stringify(history));
+    }
+  }, [history]);
+
+  // Fin de l'animation de lancer
+  useEffect(() => {
+    if (!isRolling) return;
+
+    const timer = setTimeout(() => setIsRolling(false), ROLL_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [isRolling, dice]);
+
+  const clearHistory = () => {
+    localStorage.removeItem('diceHistory');
+    setHistory([]);
+    setDice(0);
+  };
+
   return (
     <div className="App">
       <main className="App-main">
@@ -12,9 +57,29 @@ function App() {
           <p className="App-subtitle">
             Teste du dé et de l'historique de lancers.
           </p>
+          <div className="App-canvas-wrapper">
+            <Canvas
+              className="App-canvas"
+              gl={{ alpha: true }}
+              style={{ background: 'transparent' }}
+              camera={{ position: [2, 2, 2], fov: 50 }}
+            >
+              <Suspense fallback={null}>
+                <OrbitControls enabled={!isRolling} />
+                <Dice3D dice={dice} isRolling={isRolling} />
+                <ambientLight intensity={0.5} />
+                <directionalLight position={[5, 5, 5]} intensity={1} />
+              </Suspense>
+            </Canvas>
+          </div>
         </section>
         <section className="App-content">
-          <Dice />
+          <Dice
+            dice={dice}
+            history={history}
+            rollDice={rollDice}
+            onClearHistory={clearHistory}
+          />
         </section>
       </main>
     </div>
