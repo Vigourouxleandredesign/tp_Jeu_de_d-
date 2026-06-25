@@ -41,6 +41,7 @@ function Dice({ dice, history, rollDice, onClearHistory }) {
 function Dice3D({ dice, isRolling }) {
     const mesh = useRef();
     const rollStartTime = useRef(0);
+    const targetQuat = useRef(new THREE.Quaternion());
     const textures = useLoader(THREE.TextureLoader, FACE_TEXTURES);
 
     const materials = useMemo(
@@ -51,6 +52,13 @@ function Dice3D({ dice, isRolling }) {
             }),
         [textures]
     );
+
+    useEffect(() => {
+        if (dice > 0) {
+            const [tx, ty, tz] = faceEnHaut[dice];
+            targetQuat.current.setFromEuler(new THREE.Euler(tx, ty, tz));
+        }
+    }, [dice]);
 
     useEffect(() => {
         if (isRolling) {
@@ -73,12 +81,8 @@ function Dice3D({ dice, isRolling }) {
             mesh.current.rotation.y += spin * speed * 1.2;
             mesh.current.rotation.z += spin * speed * 0.5;
         } else if (dice > 0) {
-            const [targetX, targetY, targetZ] = faceEnHaut[dice];
-            const settle = 1 - Math.exp(-delta * 6);
-
-            mesh.current.rotation.x += (targetX - mesh.current.rotation.x) * settle;
-            mesh.current.rotation.y += (targetY - mesh.current.rotation.y) * settle;
-            mesh.current.rotation.z += (targetZ - mesh.current.rotation.z) * settle;
+            const settle = 1 - Math.exp(-delta * 8);
+            mesh.current.quaternion.slerp(targetQuat.current, settle);
         }
     });
 

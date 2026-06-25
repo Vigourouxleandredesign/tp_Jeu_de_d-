@@ -1,7 +1,7 @@
 import logo from './logo.svg';
 import './App.css';
 import Dice, { Dice3D, ROLL_DURATION_MS } from './components/dice';
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei/core/OrbitControls';
 
@@ -9,9 +9,12 @@ function App() {
   const [dice, setDice] = useState(0);
   const [history, setHistory] = useState([]);
   const [isRolling, setIsRolling] = useState(false);
+  const controlsRef = useRef(null);
 
   const rollDice = () => {
     if (isRolling) return;
+
+    controlsRef.current?.reset();
 
     const value = Math.floor(Math.random() * 6) + 1;
     setDice(value);
@@ -65,7 +68,7 @@ function App() {
               camera={{ position: [2, 2, 2], fov: 50 }}
             >
               <Suspense fallback={null}>
-                <OrbitControls enabled={!isRolling} />
+                <OrbitControls ref={controlsRef} enabled={!isRolling} />
                 <Dice3D dice={dice} isRolling={isRolling} />
                 <ambientLight intensity={0.5} />
                 <directionalLight position={[5, 5, 5]} intensity={1} />
