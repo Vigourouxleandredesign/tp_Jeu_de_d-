@@ -1,24 +1,19 @@
 import { useRef, useMemo, useEffect } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei/core/Gltf';
 import * as THREE from 'three';
 import './dice.css';
 
-const FACE_TEXTURES = [
-    '/textures/dice3.png',
-    '/textures/dice4.png',
-    '/textures/dice1.png',
-    '/textures/dice6.png',
-    '/textures/dice5.png',
-    '/textures/dice2.png',
-];
+const MODEL_PATH = '/D6.glb';
 
+// Paires opposées inversées sur le GLB : 1↔6, 2↔5, 3↔4
 const faceEnHaut = {
-    1: [0, 0, 0],
-    2: [Math.PI / 2, 0, 0],
-    3: [0, 0, Math.PI / 2],
-    4: [0, 0, -Math.PI / 2],
-    5: [-Math.PI / 2, 0, 0],
-    6: [Math.PI, 0, 0],
+    1: [Math.PI, 0, 0],
+    2: [-Math.PI / 2, 0, 0],
+    3: [0, 0, -Math.PI / 2],
+    4: [0, 0, Math.PI / 2],
+    5: [Math.PI / 2, 0, 0],
+    6: [0, 0, 0],
 };
 
 const ROLL_DURATION_MS = 800;
@@ -39,19 +34,12 @@ function Dice({ dice, history, rollDice, onClearHistory }) {
 }
 
 function Dice3D({ dice, isRolling }) {
-    const mesh = useRef();
+    const group = useRef();
     const rollStartTime = useRef(0);
     const targetQuat = useRef(new THREE.Quaternion());
-    const textures = useLoader(THREE.TextureLoader, FACE_TEXTURES);
+    const { nodes } = useGLTF(MODEL_PATH);
 
-    const materials = useMemo(
-        () =>
-            textures.map((texture) => {
-                texture.colorSpace = THREE.SRGBColorSpace;
-                return new THREE.MeshStandardMaterial({ map: texture });
-            }),
-        [textures]
-    );
+    const model = useMemo(() => nodes.d6.clone(true), [nodes]);
 
     useEffect(() => {
         if (dice > 0) {
@@ -67,7 +55,7 @@ function Dice3D({ dice, isRolling }) {
     }, [isRolling]);
 
     useFrame((_, delta) => {
-        if (!mesh.current) return;
+        if (!group.current) return;
 
         if (isRolling) {
             const progress = Math.min(
@@ -77,21 +65,23 @@ function Dice3D({ dice, isRolling }) {
             const speed = Math.sin(progress * Math.PI);
             const spin = delta * 14;
 
-            mesh.current.rotation.x += spin * speed;
-            mesh.current.rotation.y += spin * speed * 1.2;
-            mesh.current.rotation.z += spin * speed * 0.5;
+            group.current.rotation.x += spin * speed;
+            group.current.rotation.y += spin * speed * 1.2;
+            group.current.rotation.z += spin * speed * 0.5;
         } else if (dice > 0) {
             const settle = 1 - Math.exp(-delta * 8);
-            mesh.current.quaternion.slerp(targetQuat.current, settle);
+            group.current.quaternion.slerp(targetQuat.current, settle);
         }
     });
 
     return (
-        <mesh ref={mesh} material={materials}>
-            <boxGeometry args={[1.1, 1.1, 1.1]} />
-        </mesh>
+        <group ref={group} scale={0.8}>
+            <primitive object={model} />
+        </group>
     );
 }
+
+useGLTF.preload(MODEL_PATH);
 
 export default Dice;
 export { Dice3D, ROLL_DURATION_MS };
